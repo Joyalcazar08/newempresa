@@ -5,6 +5,8 @@ import os
 import base64
 import fitz  # PyMuPDF
 from PIL import Image
+import os
+import mysql.connector
 
 app = Flask(__name__)
 
