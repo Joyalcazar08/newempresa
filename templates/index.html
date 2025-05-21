@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Firmar Documento</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.5/dist/signature_pad.umd.min.js"></script>
+    <style>
+        canvas {
+            border: 1px solid #000;
+        }
+        #video {
+            width: 100%;
+            max-width: 320px;
+            height: auto;
+            border: 1px solid #000;
+        }
+        .foto-preview {
+            display: none;
+            border: 2px dashed #6c757d;
+            border-radius: 5px;
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body class="container py-4">
+    <h2 class="mb-4">Firmar Documento</h2>
+    <form method="POST" action="/firmar">
+        <div class="mb-3">
+            <label class="form-label">Nombre completo:</label>
+            <input type="text" name="nombre" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Identificador único:</label>
+            <input type="text" name="identificador" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Firma digital:</label>
+            <canvas id="firma" width="600" height="200"></canvas>
+            <button type="button" class="btn btn-secondary btn-sm mt-2" onclick="limpiarFirma()">Limpiar Firma</button>
+            <input type="hidden" name="firma" id="firma_input">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Tomar Fotos:</label><br>
+            <video id="video" autoplay class="mb-2"></video><br>
+            <button type="button" class="btn btn-primary btn-sm me-2" onclick="capturarFoto(0)">Capturar Foto 1</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="capturarFoto(1)">Capturar Foto 2</button>
+            <div class="d-flex gap-3 mt-3">
+                <canvas id="fotoCanvas0" class="foto-preview"></canvas>
+                <canvas id="fotoCanvas1" class="foto-preview"></canvas>
+            </div>
+            <!-- Inputs ocultos para enviar las dos fotos -->
+            <input type="hidden" name="foto1" id="foto1_input">
+            <input type="hidden" name="foto2" id="foto2_input">
+        </div>
+
+        <button type="submit" class="btn btn-success" onclick="prepararDatos()">Firmar Documento</button>
+    </form>
+
+    <script>
+        // Firma
+        const canvas = document.getElementById('firma');
+        const signaturePad = new SignaturePad(canvas);
+
+        function limpiarFirma() {
+            signaturePad.clear();
+        }
+
+        // Cámara
+        const video = document.getElementById('video');
+        const foto1Input = document.getElementById('foto1_input');
+        const foto2Input = document.getElementById('foto2_input');
+        const constraints = { video: true };
+        navigator.mediaDevices.getUserMedia(constraints).then(stream => {
+            video.srcObject = stream;
+        });
+
+        function capturarFoto(index) {
+            const canvasId = `fotoCanvas${index}`;
+            const fotoCanvas = document.getElementById(canvasId);
+            fotoCanvas.width = 150;
+            fotoCanvas.height = 150;
+            const context = fotoCanvas.getContext('2d');
+            context.drawImage(video, 0, 0, fotoCanvas.width, fotoCanvas.height);
+            fotoCanvas.style.display = 'block';
+
+            const dataURL = fotoCanvas.toDataURL('image/jpeg');
+            if (index === 0) {
+                foto1Input.value = dataURL;
+            } else if (index === 1) {
+                foto2Input.value = dataURL;
+            }
+        }
+
+        function prepararDatos() {
+            const firmaInput = document.getElementById('firma_input');
+            if (!signaturePad.isEmpty()) {
+                firmaInput.value = signaturePad.toDataURL();
+            }
+        }
+    </script>
+</body>
+</html>
