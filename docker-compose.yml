@@ -5,29 +5,35 @@ services:
     build: .
     container_name: flask_app
     ports:
-      - "5000:5000"
+      - "5001:5000"  # Evita conflicto si algo usa 5000 en el host
     volumes:
       - .:/app
     depends_on:
       - db
     environment:
-      - FLASK_ENV=development
-      - MYSQL_HOST=db
-      - MYSQL_USER=root
-      - MYSQL_PASSWORD=clave123
-      - MYSQL_DATABASE=firmasdb
+      - MYSQL_HOST=flask_db  # Este debe coincidir con el nombre del contenedor de MySQL
+      - MYSQL_USER=vetting
+      - MYSQL_PASSWORD=vehrso
+      - MYSQL_DATABASE=vetting
+    networks:
+      - flasknet
 
   db:
     image: mysql:8.0
-    container_name: mysql_db
+    container_name: flask_db  # Cambiado para que no colisione con "mysql_db"
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: clave123
-      MYSQL_DATABASE: firmasdb
+      MYSQL_ROOT_PASSWORD: vehrso
+      MYSQL_DATABASE: vetting
     ports:
-      - "3306:3306"
+      - "3309:3306"  # Evita conflicto con el 3308 ya usado por el primer MySQL
     volumes:
-      - mysql_data:/var/lib/mysql
+      - flask_mysql_data:/var/lib/mysql
+    networks:
+      - flasknet
 
 volumes:
-  mysql_data:
+  flask_mysql_data:
+
+networks:
+  flasknet:

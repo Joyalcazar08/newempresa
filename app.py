@@ -1,4 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    send_from_directory,
+)
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import os
@@ -11,56 +18,67 @@ import mysql.connector
 app = Flask(__name__)
 
 # Configuraciones
-UPLOAD_FOLDER = 'static/uploads'
-SIGNED_FOLDER = 'static/firmados'
+UPLOAD_FOLDER = "static/uploads"
+SIGNED_FOLDER = "static/firmados"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(SIGNED_FOLDER, exist_ok=True)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['SIGNED_FOLDER'] = SIGNED_FOLDER
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["SIGNED_FOLDER"] = SIGNED_FOLDER
 
 # Documento base
-DOCUMENTO_BASE = 'static/documento_base.pdf'
+DOCUMENTO_BASE = "static/documento_base.pdf"
 
-@app.route('/')
+
+@app.route("/")
 def index():
-    return render_template('index.html')
+    return render_template("index.html")
 
-@app.route('/firmar', methods=['POST'])
+
+@app.route("/firmar", methods=["POST"])
 def firmar():
-    nombre = request.form['nombre']
-    identificador = request.form['identificador']
-    firma_data = request.form['firma']  # base64
-    foto1_data = request.form['foto1']  # base64
-    foto2_data = request.form['foto2']  # base64
+    nombre = request.form["nombre"]
+    identificador = request.form["identificador"]
+    firma_data = request.form["firma"]  # base64
+    foto1_data = request.form["foto1"]  # base64
+    foto2_data = request.form["foto2"]  # base64
 
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     nombre_archivo = f"{secure_filename(nombre)}_{timestamp}"
 
     # Guardar firma
-    firma_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{nombre_archivo}_firma.png")
+    firma_path = os.path.join(
+        app.config["UPLOAD_FOLDER"], f"{nombre_archivo}_firma.png"
+    )
     with open(firma_path, "wb") as f:
         f.write(base64.b64decode(firma_data.split(",")[1]))
 
     # Guardar foto 1
-    foto1_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{nombre_archivo}_foto1.jpg")
+    foto1_path = os.path.join(
+        app.config["UPLOAD_FOLDER"], f"{nombre_archivo}_foto1.jpg"
+    )
     with open(foto1_path, "wb") as f:
         f.write(base64.b64decode(foto1_data.split(",")[1]))
 
     # Guardar foto 2
-    foto2_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{nombre_archivo}_foto2.jpg")
+    foto2_path = os.path.join(
+        app.config["UPLOAD_FOLDER"], f"{nombre_archivo}_foto2.jpg"
+    )
     with open(foto2_path, "wb") as f:
         f.write(base64.b64decode(foto2_data.split(",")[1]))
 
     # Insertar en PDF
-    pdf_ruta = os.path.join(app.config['SIGNED_FOLDER'], f"{nombre_archivo}_firmado.pdf")
+    pdf_ruta = os.path.join(
+        app.config["SIGNED_FOLDER"], f"{nombre_archivo}_firmado.pdf"
+    )
     insertar_en_pdf(DOCUMENTO_BASE, firma_path, foto1_path, foto2_path, pdf_ruta)
 
-    return redirect(url_for('descargar', filename=os.path.basename(pdf_ruta)))
+    return redirect(url_for("descargar", filename=os.path.basename(pdf_ruta)))
 
 
-@app.route('/descargar/<filename>')
+@app.route("/descargar/<filename>")
 def descargar(filename):
-    return send_from_directory(app.config['SIGNED_FOLDER'], filename)
+    return send_from_directory(app.config["SIGNED_FOLDER"], filename)
+
 
 def insertar_en_pdf(pdf_path, firma_img, foto1_img, foto2_img, output_path):
     doc = fitz.open(pdf_path)
@@ -110,5 +128,5 @@ def insertar_en_pdf(pdf_path, firma_img, foto1_img, foto2_img, output_path):
     doc.close()
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
